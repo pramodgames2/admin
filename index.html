@@ -3,78 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Black Store Admin - Login</title>
+    <title>Black Store Admin - Access</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { background: #111; padding: 40px; border-radius: 10px; border: 1px solid #333; text-align: center; width: 300px; }
-        h2 { letter-spacing: 2px; margin-bottom: 30px; }
-        button { background: #fff; color: #000; border: none; padding: 12px 20px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 100%; }
-        button:hover { background: #ccc; }
-        #adminPanel { display: none; width: 90%; max-width: 500px; background: #111; padding: 20px; border-radius: 10px; }
-        input { width: 100%; padding: 10px; margin: 10px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; box-sizing: border-box; }
-        .upload-btn { background: #28a745; color: white; margin-top: 10px; }
+        body { background: #000; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: #111; padding: 40px; border-radius: 15px; border: 1px solid #333; text-align: center; width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h2 { color: #fff; letter-spacing: 3px; margin-bottom: 10px; }
+        .welcome-text { color: #888; margin-bottom: 30px; font-size: 14px; }
+        
+        /* ප්‍රධාන බටන් එක */
+        .enter-btn { background: #fff; color: #000; border: none; padding: 15px; font-weight: bold; cursor: pointer; border-radius: 8px; width: 100%; font-size: 16px; transition: 0.3s; }
+        .enter-btn:hover { background: #28a745; color: #fff; }
+
+        /* ඇඩ්මින් පැනල් එක */
+        #adminPanel { display: none; }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; box-sizing: border-box; }
+        .upload-btn { background: #28a745; color: white; margin-top: 15px; font-size: 16px; }
+        .logout-btn { background: #444; color: #ccc; margin-top: 10px; font-size: 13px; border: none; padding: 8px; cursor: pointer; width: 100%; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-    <div id="loginSection" class="login-card">
+    <div id="loginSection" class="card">
         <h2>BLACK STORE</h2>
-        <p>Secure Admin Login</p>
-        <button id="loginBtn">Login with Google</button>
+        <p class="welcome-text">WELCOME UPPUL PRAMOD</p>
+        <button id="enterBtn" class="enter-btn">ENTER TO ADMIN PANEL</button>
     </div>
 
-    <div id="adminPanel">
-        <h2>Admin Panel</h2>
-        <p id="userEmail"></p>
-        <input type="text" id="gameTitle" placeholder="Game Title">
-        <input type="text" id="imageURL" placeholder="Image URL (Link)">
-        <input type="text" id="downloadURL" placeholder="Download URL (Link)">
-        <button class="upload-btn" id="uploadBtn">UPLOAD GAME</button>
-        <button onclick="location.reload()" style="background:#555; margin-top:10px;">Logout</button>
+    <div id="adminPanel" class="card">
+        <h2>ADMIN PANEL</h2>
+        <p style="color: #28a745; font-size: 12px;">READY TO UPLOAD GAMES</p>
+        
+        <input type="text" id="gameTitle" placeholder="Enter Game Name">
+        <input type="text" id="imageURL" placeholder="Paste Image Link (URL)">
+        <input type="text" id="downloadURL" placeholder="Paste Download Link (URL)">
+        
+        <button class="enter-btn upload-btn" id="uploadBtn">UPLOAD TO STORE</button>
+        <button class="logout-btn" onclick="location.reload()">BACK TO HOME</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.app/firebase-database.js";
 
+        // ඔයාගේ Firebase විස්තර
         const firebaseConfig = {
-            apiKey: "AIzaSyC0ZqCnq28-bauG3YBb7WrVVNdQgYOGmqg",
-            authDomain: "black-store-login.firebaseapp.com",
             databaseURL: "https://black-store-login-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "black-store-login",
-            storageBucket: "black-store-login.firebasestorage.app",
-            messagingSenderId: "980593701862",
-            appId: "1:980593701862:web:eabd842d94a728c2c9c27"
         };
 
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
         const db = getDatabase(app);
-        const provider = new GoogleAuthProvider();
 
-        const allowedEmail = "Shiyamal5005@gmail.com"; // මෙන්න ඔයාගේ ඊමේල් එක
-
-        // Login Function
-        document.getElementById('loginBtn').onclick = () => {
-            signInWithPopup(auth, provider).catch(err => alert("Error: " + err.message));
+        // Enter බටන් එක එබූ විට කෙලින්ම පැනල් එක පෙන්වීම
+        document.getElementById('enterBtn').onclick = () => {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
         };
 
-        // Check Auth State
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                if (user.email === allowedEmail) {
-                    document.getElementById('loginSection').style.display = 'none';
-                    document.getElementById('adminPanel').style.display = 'block';
-                    document.getElementById('userEmail').innerText = "Logged in as: " + user.email;
-                } else {
-                    alert("Unauthorized! Only Shiyamal can access this.");
-                    auth.signOut();
-                }
-            }
-        });
-
-        // Upload Function
+        // ගේම් එක Upload කරන Function එක
         document.getElementById('uploadBtn').onclick = () => {
             const title = document.getElementById('gameTitle').value;
             const img = document.getElementById('imageURL').value;
@@ -86,15 +72,11 @@
                     imageURL: img,
                     downloadURL: link
                 }).then(() => {
-                    alert("Game Uploaded Successfully!");
+                    alert("✅ Success! Game added to Black Store.");
                     document.getElementById('gameTitle').value = "";
                     document.getElementById('imageURL').value = "";
                     document.getElementById('downloadURL').value = "";
+                }).catch((error) => {
+                    alert("❌ Error: " + error.message);
                 });
             } else {
-                alert("Please fill all fields!");
-            }
-        };
-    </script>
-</body>
-</html>
