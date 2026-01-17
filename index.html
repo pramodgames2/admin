@@ -3,49 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Black Store Admin - Access</title>
+    <title>Black Store Admin</title>
     <style>
-        body { background: #000; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: #111; padding: 40px; border-radius: 15px; border: 1px solid #333; text-align: center; width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        h2 { color: #fff; letter-spacing: 3px; margin-bottom: 10px; }
-        .welcome-text { color: #888; margin-bottom: 30px; font-size: 14px; }
-        
-        /* ප්‍රධාන බටන් එක */
-        .enter-btn { background: #fff; color: #000; border: none; padding: 15px; font-weight: bold; cursor: pointer; border-radius: 8px; width: 100%; font-size: 16px; transition: 0.3s; }
-        .enter-btn:hover { background: #28a745; color: #fff; }
-
-        /* ඇඩ්මින් පැනල් එක */
+        body { background: #000; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: #111; padding: 40px; border-radius: 15px; border: 1px solid #333; text-align: center; width: 90%; max-width: 400px; }
+        h2 { letter-spacing: 3px; }
+        .enter-btn { background: #fff; color: #000; border: none; padding: 15px; font-weight: bold; cursor: pointer; border-radius: 8px; width: 100%; font-size: 16px; margin-top: 20px; }
         #adminPanel { display: none; }
         input { width: 100%; padding: 12px; margin: 10px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; box-sizing: border-box; }
-        .upload-btn { background: #28a745; color: white; margin-top: 15px; font-size: 16px; }
-        .logout-btn { background: #444; color: #ccc; margin-top: 10px; font-size: 13px; border: none; padding: 8px; cursor: pointer; width: 100%; border-radius: 5px; }
+        .upload-btn { background: #28a745; color: white; }
     </style>
 </head>
 <body>
 
     <div id="loginSection" class="card">
         <h2>BLACK STORE</h2>
-        <p class="welcome-text">WELCOME UPPUL PRAMOD</p>
+        <p>WELCOME UPPUL PRAMOD</p>
         <button id="enterBtn" class="enter-btn">ENTER TO ADMIN PANEL</button>
     </div>
 
     <div id="adminPanel" class="card">
         <h2>ADMIN PANEL</h2>
-        <p style="color: #28a745; font-size: 12px;">READY TO UPLOAD GAMES</p>
-        
-        <input type="text" id="gameTitle" placeholder="Enter Game Name">
-        <input type="text" id="imageURL" placeholder="Paste Image Link (URL)">
-        <input type="text" id="downloadURL" placeholder="Paste Download Link (URL)">
-        
+        <input type="text" id="gameTitle" placeholder="Game Name">
+        <input type="text" id="imageURL" placeholder="Image URL">
+        <input type="text" id="downloadURL" placeholder="Download URL">
         <button class="enter-btn upload-btn" id="uploadBtn">UPLOAD TO STORE</button>
-        <button class="logout-btn" onclick="location.reload()">BACK TO HOME</button>
+        <button onclick="location.reload()" style="background:#444; color:#ccc; margin-top:10px; border:none; padding:10px; width:100%; border-radius:5px; cursor:pointer;">BACK</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.app/firebase-database.js";
+        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // ඔයාගේ Firebase විස්තර
         const firebaseConfig = {
             databaseURL: "https://black-store-login-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "black-store-login",
@@ -54,13 +43,18 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Enter බටන් එක එබූ විට කෙලින්ම පැනල් එක පෙන්වීම
-        document.getElementById('enterBtn').onclick = () => {
-            document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('adminPanel').style.display = 'block';
+        // බටන් එක වැඩ කරන එක සහතික කිරීමට මේ කොටස බලන්න
+        const enterBtn = document.getElementById('enterBtn');
+        const loginSection = document.getElementById('loginSection');
+        const adminPanel = document.getElementById('adminPanel');
+
+        enterBtn.onclick = function() {
+            console.log("Button Clicked!"); // මේක බ්‍රවුසර් එකේ චෙක් කරන්න පුළුවන්
+            loginSection.style.display = 'none';
+            adminPanel.style.display = 'block';
         };
 
-        // ගේම් එක Upload කරන Function එක
+        // Upload Function
         document.getElementById('uploadBtn').onclick = () => {
             const title = document.getElementById('gameTitle').value;
             const img = document.getElementById('imageURL').value;
@@ -72,11 +66,15 @@
                     imageURL: img,
                     downloadURL: link
                 }).then(() => {
-                    alert("✅ Success! Game added to Black Store.");
+                    alert("✅ Game Added Successfully!");
                     document.getElementById('gameTitle').value = "";
                     document.getElementById('imageURL').value = "";
                     document.getElementById('downloadURL').value = "";
-                }).catch((error) => {
-                    alert("❌ Error: " + error.message);
-                });
+                }).catch(err => alert("Error: " + err.message));
             } else {
+                alert("Please fill all boxes!");
+            }
+        };
+    </script>
+</body>
+</html>
