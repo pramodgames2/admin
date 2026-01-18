@@ -15,7 +15,7 @@
         
         #adminPanel { display: none; }
         .upload-btn { background: #28a745; color: white; margin-top: 15px; font-size: 16px; }
-        .upload-btn:hover { background: #218838; }
+        .upload-btn.edit-mode { background: #007bff; } /* Edit mode එකේදී නිල් පාට වේ */
 
         label { display: block; text-align: left; font-size: 12px; color: #888; margin-top: 10px; margin-left: 2px; text-transform: uppercase; }
         
@@ -27,6 +27,8 @@
 
         .game-list { margin-top: 30px; text-align: left; max-height: 300px; overflow-y: auto; padding: 10px; border-top: 1px solid #333; }
         .game-item { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 10px; margin-bottom: 5px; border-radius: 5px; font-size: 13px; border-left: 3px solid #fff; }
+        .btn-group { display: flex; gap: 5px; }
+        .edit-btn { background: #ffc107; color: #000; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
         .delete-btn { background: #dc3545; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
@@ -39,7 +41,7 @@
     </div>
 
     <div id="adminPanel" class="card">
-        <h2>ADMIN PANEL</h2>
+        <h2 id="panelTitle">ADMIN PANEL</h2>
         
         <label>Game Basics</label>
         <input type="text" id="gameTitle" placeholder="Game Name">
@@ -66,12 +68,13 @@
             <span class="rating-option active" data-value="5">★</span>
         </div>
 
-        <label>Game Image</label>
+        <label>Game Image (Leave empty if not changing when editing)</label>
         <input type="file" id="imageFile" class="file-input" accept="image/*">
         
         <input type="text" id="downloadURL" placeholder="Download Link">
         
         <button class="enter-btn upload-btn" id="uploadBtn">UPLOAD TO STORE</button>
+        <button id="cancelEdit" style="display:none; background:#666; color:#fff;" class="enter-btn">CANCEL EDIT</button>
         
         <div class="game-list" id="gameList">
             <p style="text-align: center; color: #555;">Loading games...</p>
@@ -82,7 +85,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             databaseURL: "https://black-store-login-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -94,16 +97,24 @@
         const gamesRef = ref(db, 'games');
 
         let selectedRating = 5;
+        let editId = null; // Edit කරන Game එකේ ID එක තබා ගැනීමට
+        let currentBase64Image = ""; // දැනට තියෙන Image එක තබා ගැනීමට
 
-        document.querySelectorAll('.rating-option').forEach(star => {
+        // Rating Star Logic
+        const stars = document.querySelectorAll('.rating-option');
+        stars.forEach(star => {
             star.onclick = (e) => {
-                selectedRating = e.target.getAttribute('data-value');
-                document.querySelectorAll('.rating-option').forEach(s => s.classList.remove('active'));
-                for(let i=0; i<selectedRating; i++) {
-                    document.querySelectorAll('.rating-option')[i].classList.add('active');
-                }
+                setStars(e.target.getAttribute('data-value'));
             };
         });
+
+        function setStars(val) {
+            selectedRating = val;
+            stars.forEach(s => s.classList.remove('active'));
+            for(let i=0; i<selectedRating; i++) {
+                stars[i].classList.add('active');
+            }
+        }
 
         document.getElementById('enterBtn').onclick = () => {
             document.getElementById('loginSection').style.display = 'none';
@@ -127,37 +138,66 @@
             const fileInput = document.getElementById('imageFile');
             const link = document.getElementById('downloadURL').value;
 
-            // පින්තූරය පරීක්ෂාව පමණක් ඉතිරි කළා
+            // Upload හෝ Edit සඳහා Image එකක් තිබිය යුතුයි (Edit වලදී අලුත් එකක් නොදුන්නොත් පරණ එකම ගනී)
+            let imageToUpload = currentBase64Image;
             if(fileInput.files[0]) {
                 try {
-                    const base64Image = await toBase64(fileInput.files[0]);
-                    
-                    push(gamesRef, {
-                        title: title || "Unknown Game",
-                        category: category,
-                        price: price || "[Free]",
-                        size: size || "N/A",
-                        ratingNum: ratingNum || "5.0",
-                        starRating: selectedRating,
-                        imageURL: base64Image,
-                        downloadURL: link || "#",
-                        timestamp: Date.now()
-                    }).then(() => {
-                        alert("✅ Uploaded Successfully!");
-                        document.getElementById('gameTitle').value = "";
-                        document.getElementById('imageFile').value = "";
-                        document.getElementById('downloadURL').value = "";
-                        document.getElementById('gamePrice').value = "";
-                        document.getElementById('gameSize').value = "";
-                        document.getElementById('ratingNum').value = "";
-                    });
+                    imageToUpload = await toBase64(fileInput.files[0]);
                 } catch (e) {
-                    alert("Image too large! Use a smaller image.");
+                    alert("Image too large!");
+                    return;
                 }
-            } else {
+            }
+
+            if(!imageToUpload && !editId) {
                 alert("Please select a Game Image!");
+                return;
+            }
+
+            const gameData = {
+                title: title || "Unknown Game",
+                category: category,
+                price: price || "[Free]",
+                size: size || "N/A",
+                ratingNum: ratingNum || "5.0",
+                starRating: selectedRating,
+                imageURL: imageToUpload,
+                downloadURL: link || "#",
+                timestamp: Date.now()
+            };
+
+            if(editId) {
+                // UPDATE කරන්න
+                update(ref(db, 'games/' + editId), gameData).then(() => {
+                    alert("✅ Updated Successfully!");
+                    resetForm();
+                });
+            } else {
+                // අලුතින් PUSH කරන්න
+                push(gamesRef, gameData).then(() => {
+                    alert("✅ Uploaded Successfully!");
+                    resetForm();
+                });
             }
         };
+
+        function resetForm() {
+            editId = null;
+            currentBase64Image = "";
+            document.getElementById('gameTitle').value = "";
+            document.getElementById('imageFile').value = "";
+            document.getElementById('downloadURL').value = "";
+            document.getElementById('gamePrice').value = "";
+            document.getElementById('gameSize').value = "";
+            document.getElementById('ratingNum').value = "";
+            document.getElementById('uploadBtn').innerText = "UPLOAD TO STORE";
+            document.getElementById('uploadBtn').classList.remove('edit-mode');
+            document.getElementById('panelTitle').innerText = "ADMIN PANEL";
+            document.getElementById('cancelEdit').style.display = "none";
+            setStars(5);
+        }
+
+        document.getElementById('cancelEdit').onclick = resetForm;
 
         function loadGames() {
             onValue(gamesRef, (snapshot) => {
@@ -165,19 +205,50 @@
                 gameListDiv.innerHTML = "<h3>Live Games</h3>";
                 const data = snapshot.val();
                 if (data) {
-                    Object.keys(data).forEach(key => {
+                    Object.keys(data).reverse().forEach(key => {
                         const game = data[key];
                         const item = document.createElement('div');
                         item.className = 'game-item';
                         item.innerHTML = `
                             <div><strong>${game.title}</strong><br><small>${game.size} | ${game.category}</small></div>
-                            <button class="delete-btn" data-id="${key}">Remove</button>
+                            <div class="btn-group">
+                                <button class="edit-btn" data-id="${key}">Edit</button>
+                                <button class="delete-btn" data-id="${key}">Remove</button>
+                            </div>
                         `;
                         gameListDiv.appendChild(item);
                     });
+
+                    // Edit Button Event
+                    document.querySelectorAll('.edit-btn').forEach(btn => {
+                        btn.onclick = (e) => {
+                            const id = e.target.getAttribute('data-id');
+                            const game = data[id];
+                            editId = id;
+                            currentBase64Image = game.imageURL;
+                            
+                            document.getElementById('gameTitle').value = game.title;
+                            document.getElementById('gameCategory').value = game.category;
+                            document.getElementById('gamePrice').value = game.price;
+                            document.getElementById('gameSize').value = game.size;
+                            document.getElementById('ratingNum').value = game.ratingNum;
+                            document.getElementById('downloadURL').value = game.downloadURL;
+                            setStars(game.starRating);
+
+                            document.getElementById('uploadBtn').innerText = "UPDATE GAME DATA";
+                            document.getElementById('uploadBtn').classList.add('edit-mode');
+                            document.getElementById('panelTitle').innerText = "EDITING: " + game.title;
+                            document.getElementById('cancelEdit').style.display = "block";
+                            window.scrollTo(0,0);
+                        };
+                    });
+
+                    // Delete Button Event
                     document.querySelectorAll('.delete-btn').forEach(btn => {
                         btn.onclick = (e) => {
-                            if(confirm("Delete?")) remove(ref(db, 'games/' + e.target.getAttribute('data-id')));
+                            if(confirm("Are you sure you want to delete this game?")) {
+                                remove(ref(db, 'games/' + e.target.getAttribute('data-id')));
+                            }
                         };
                     });
                 }
