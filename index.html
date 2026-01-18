@@ -8,14 +8,25 @@
         body { background: #000; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
         .card { background: #111; padding: 30px; border-radius: 15px; border: 1px solid #333; text-align: center; width: 100%; max-width: 500px; box-sizing: border-box; }
         h2 { letter-spacing: 3px; color: #fff; }
-        .enter-btn { background: #fff; color: #000; border: none; padding: 12px; font-weight: bold; cursor: pointer; border-radius: 8px; width: 100%; margin-top: 10px; }
-        input, .file-input { width: 100%; padding: 12px; margin: 10px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; box-sizing: border-box; }
+        .enter-btn { background: #fff; color: #000; border: none; padding: 12px; font-weight: bold; cursor: pointer; border-radius: 8px; width: 100%; margin-top: 10px; transition: 0.3s; }
+        .enter-btn:hover { background: #ccc; }
+        
+        input, .file-input, select { width: 100%; padding: 12px; margin: 10px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; box-sizing: border-box; outline: none; }
+        
         #adminPanel { display: none; }
         .upload-btn { background: #28a745; color: white; margin-top: 15px; }
+        .upload-btn:hover { background: #218838; }
+
+        label { display: block; text-align: left; font-size: 13px; color: #aaa; margin-top: 10px; margin-left: 2px; }
         
+        /* Rating Bar Styles */
+        .rating-container { display: flex; justify-content: space-around; background: #222; padding: 10px; border-radius: 5px; margin: 10px 0; border: 1px solid #444; }
+        .rating-option { cursor: pointer; color: #555; font-size: 20px; transition: 0.2s; }
+        .rating-option.active { color: #ffc107; transform: scale(1.2); }
+
         /* Delete List Styles */
         .game-list { margin-top: 30px; text-align: left; max-height: 300px; overflow-y: auto; padding: 10px; border-top: 1px solid #333; }
-        .game-item { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 10px; margin-bottom: 5px; border-radius: 5px; font-size: 14px; }
+        .game-item { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 10px; margin-bottom: 5px; border-radius: 5px; font-size: 14px; border-left: 3px solid #fff; }
         .delete-btn { background: #dc3545; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
         .delete-btn:hover { background: #a71d2a; }
     </style>
@@ -33,7 +44,23 @@
         
         <input type="text" id="gameTitle" placeholder="Game Name">
         
-        <label style="display: block; text-align: left; font-size: 12px; color: #888;">Select Game Image (PC/Mobile):</label>
+        <label>Select Device Category:</label>
+        <select id="gameCategory">
+            <option value="PC">For PC</option>
+            <option value="Mobile">For Mobile</option>
+            <option value="Both">Both (PC & Mobile)</option>
+        </select>
+
+        <label>Select Rating (Stars):</label>
+        <div class="rating-container" id="ratingBar">
+            <span class="rating-option" data-value="1">★</span>
+            <span class="rating-option" data-value="2">★</span>
+            <span class="rating-option" data-value="3">★</span>
+            <span class="rating-option" data-value="4">★</span>
+            <span class="rating-option active" data-value="5">★</span>
+        </div>
+
+        <label>Select Game Image (PC/Mobile):</label>
         <input type="file" id="imageFile" class="file-input" accept="image/*">
         
         <input type="text" id="downloadURL" placeholder="Download Link">
@@ -41,7 +68,7 @@
         <button class="enter-btn upload-btn" id="uploadBtn">UPLOAD TO STORE</button>
         
         <div class="game-list" id="gameList">
-            <p style="text-align: center; color: #555;">Loading games...</p>
+            <p style="text-align: center; color: #555;">Loading games list...</p>
         </div>
 
         <button onclick="location.reload()" style="background:#444; color:#ccc; margin-top:20px; border:none; padding:10px; width:100%; border-radius:5px; cursor:pointer;">LOGOUT</button>
@@ -60,14 +87,25 @@
         const db = getDatabase(app);
         const gamesRef = ref(db, 'games');
 
-        // පැනල් එකට ඇතුල් වීම
+        let selectedRating = 5;
+
+        // Rating Selection Logic
+        document.querySelectorAll('.rating-option').forEach(star => {
+            star.onclick = (e) => {
+                selectedRating = e.target.getAttribute('data-value');
+                document.querySelectorAll('.rating-option').forEach(s => s.classList.remove('active'));
+                for(let i=0; i<selectedRating; i++) {
+                    document.querySelectorAll('.rating-option')[i].classList.add('active');
+                }
+            };
+        });
+
         document.getElementById('enterBtn').onclick = () => {
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('adminPanel').style.display = 'block';
             loadGames();
         };
 
-        // පින්තූරය Base64 බවට පත් කිරීම
         const toBase64 = file => new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -75,9 +113,9 @@
             reader.onerror = error => reject(error);
         });
 
-        // Upload කිරීම
         document.getElementById('uploadBtn').onclick = async () => {
             const title = document.getElementById('gameTitle').value;
+            const category = document.getElementById('gameCategory').value;
             const fileInput = document.getElementById('imageFile');
             const link = document.getElementById('downloadURL').value;
 
@@ -87,27 +125,29 @@
                     
                     push(gamesRef, {
                         title: title,
-                        imageURL: base64Image, // දැන් ලින්ක් එක වෙනුවට image එකම සේව් වෙනවා
-                        downloadURL: link
+                        category: category,
+                        rating: selectedRating,
+                        imageURL: base64Image,
+                        downloadURL: link,
+                        date: new Date().toLocaleDateString()
                     }).then(() => {
-                        alert("✅ Game Added!");
+                        alert("✅ " + title + " Added Successfully!");
                         document.getElementById('gameTitle').value = "";
                         document.getElementById('imageFile').value = "";
                         document.getElementById('downloadURL').value = "";
                     });
                 } catch (e) {
-                    alert("Image too big! Try a smaller image.");
+                    alert("Image too big! Please use a smaller image file.");
                 }
             } else {
-                alert("Fill all boxes and select an image!");
+                alert("Please fill all details and select an image!");
             }
         };
 
-        // Database එකේ තියෙන ගේම්ස් ලිස්ට් එක පෙන්වීම සහ Delete කිරීම
         function loadGames() {
             onValue(gamesRef, (snapshot) => {
                 const gameListDiv = document.getElementById('gameList');
-                gameListDiv.innerHTML = "<h3>Current Games</h3>";
+                gameListDiv.innerHTML = "<h3>Uploaded Games</h3>";
                 
                 const data = snapshot.val();
                 if (data) {
@@ -116,23 +156,25 @@
                         const item = document.createElement('div');
                         item.className = 'game-item';
                         item.innerHTML = `
-                            <span>${game.title}</span>
+                            <div>
+                                <strong>${game.title}</strong> <br>
+                                <small style="color:#888">${game.category} | ⭐${game.rating}</small>
+                            </div>
                             <button class="delete-btn" data-id="${key}">Delete</button>
                         `;
                         gameListDiv.appendChild(item);
                     });
 
-                    // Delete බටන් ක්‍රියාත්මක කිරීම
                     document.querySelectorAll('.delete-btn').forEach(btn => {
                         btn.onclick = (e) => {
                             const id = e.target.getAttribute('data-id');
-                            if(confirm("Delete this game?")) {
+                            if(confirm("Are you sure you want to delete this game?")) {
                                 remove(ref(db, 'games/' + id));
                             }
                         };
                     });
                 } else {
-                    gameListDiv.innerHTML = "<p>No games found.</p>";
+                    gameListDiv.innerHTML = "<p>No games found in database.</p>";
                 }
             });
         }
