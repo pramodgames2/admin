@@ -3,32 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Black Store Admin - Advanced</title>
+    <title>Black Store Admin - Pro</title>
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
         .card { background: #111; padding: 30px; border-radius: 15px; border: 1px solid #333; text-align: center; width: 100%; max-width: 500px; box-sizing: border-box; }
-        h2 { letter-spacing: 3px; color: #fff; }
+        h2 { letter-spacing: 3px; color: #fff; text-transform: uppercase; }
         .enter-btn { background: #fff; color: #000; border: none; padding: 12px; font-weight: bold; cursor: pointer; border-radius: 8px; width: 100%; margin-top: 10px; transition: 0.3s; }
         .enter-btn:hover { background: #ccc; }
         
-        input, .file-input, select { width: 100%; padding: 12px; margin: 10px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; box-sizing: border-box; outline: none; }
+        input, .file-input, select { width: 100%; padding: 12px; margin: 8px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; box-sizing: border-box; outline: none; }
         
         #adminPanel { display: none; }
-        .upload-btn { background: #28a745; color: white; margin-top: 15px; }
+        .upload-btn { background: #28a745; color: white; margin-top: 15px; font-size: 16px; }
         .upload-btn:hover { background: #218838; }
 
-        label { display: block; text-align: left; font-size: 13px; color: #aaa; margin-top: 10px; margin-left: 2px; }
+        label { display: block; text-align: left; font-size: 12px; color: #888; margin-top: 10px; margin-left: 2px; text-transform: uppercase; }
         
-        /* Rating Bar Styles */
+        .row { display: flex; gap: 10px; }
+
+        /* Rating Styles */
         .rating-container { display: flex; justify-content: space-around; background: #222; padding: 10px; border-radius: 5px; margin: 10px 0; border: 1px solid #444; }
         .rating-option { cursor: pointer; color: #555; font-size: 20px; transition: 0.2s; }
         .rating-option.active { color: #ffc107; transform: scale(1.2); }
 
-        /* Delete List Styles */
+        /* List Styles */
         .game-list { margin-top: 30px; text-align: left; max-height: 300px; overflow-y: auto; padding: 10px; border-top: 1px solid #333; }
-        .game-item { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 10px; margin-bottom: 5px; border-radius: 5px; font-size: 14px; border-left: 3px solid #fff; }
-        .delete-btn { background: #dc3545; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
-        .delete-btn:hover { background: #a71d2a; }
+        .game-item { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 10px; margin-bottom: 5px; border-radius: 5px; font-size: 13px; border-left: 3px solid #fff; }
+        .delete-btn { background: #dc3545; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -36,22 +37,29 @@
     <div id="loginSection" class="card">
         <h2>BLACK STORE</h2>
         <p>WELCOME PRAMOD</p>
-        <button id="enterBtn" class="enter-btn">ENTER TO ADMIN PANEL</button>
+        <button id="enterBtn" class="enter-btn">OPEN ADMIN PANEL</button>
     </div>
 
     <div id="adminPanel" class="card">
         <h2>ADMIN PANEL</h2>
         
+        <label>Game Basics</label>
         <input type="text" id="gameTitle" placeholder="Game Name">
         
-        <label>Select Device Category:</label>
-        <select id="gameCategory">
-            <option value="PC">For PC</option>
-            <option value="Mobile">For Mobile</option>
-            <option value="Both">Both (PC & Mobile)</option>
-        </select>
+        <div class="row">
+            <select id="gameCategory">
+                <option value="For PC">For PC</option>
+                <option value="For Mobile">For Mobile</option>
+            </select>
+            <input type="text" id="gamePrice" placeholder="Price (e.g: [Free])">
+        </div>
 
-        <label>Select Rating (Stars):</label>
+        <div class="row">
+            <input type="text" id="gameSize" placeholder="Size (e.g: 6.5 GB)">
+            <input type="number" step="0.1" id="ratingNum" placeholder="Rating (e.g: 9.3)">
+        </div>
+
+        <label>Star Rating</label>
         <div class="rating-container" id="ratingBar">
             <span class="rating-option" data-value="1">★</span>
             <span class="rating-option" data-value="2">★</span>
@@ -60,7 +68,7 @@
             <span class="rating-option active" data-value="5">★</span>
         </div>
 
-        <label>Select Game Image (PC/Mobile):</label>
+        <label>Game Image</label>
         <input type="file" id="imageFile" class="file-input" accept="image/*">
         
         <input type="text" id="downloadURL" placeholder="Download Link">
@@ -68,7 +76,7 @@
         <button class="enter-btn upload-btn" id="uploadBtn">UPLOAD TO STORE</button>
         
         <div class="game-list" id="gameList">
-            <p style="text-align: center; color: #555;">Loading games list...</p>
+            <p style="text-align: center; color: #555;">Loading games...</p>
         </div>
 
         <button onclick="location.reload()" style="background:#444; color:#ccc; margin-top:20px; border:none; padding:10px; width:100%; border-radius:5px; cursor:pointer;">LOGOUT</button>
@@ -89,7 +97,7 @@
 
         let selectedRating = 5;
 
-        // Rating Selection Logic
+        // Rating Star Logic
         document.querySelectorAll('.rating-option').forEach(star => {
             star.onclick = (e) => {
                 selectedRating = e.target.getAttribute('data-value');
@@ -116,6 +124,9 @@
         document.getElementById('uploadBtn').onclick = async () => {
             const title = document.getElementById('gameTitle').value;
             const category = document.getElementById('gameCategory').value;
+            const price = document.getElementById('gamePrice').value;
+            const size = document.getElementById('gameSize').value;
+            const ratingNum = document.getElementById('ratingNum').value;
             const fileInput = document.getElementById('imageFile');
             const link = document.getElementById('downloadURL').value;
 
@@ -126,29 +137,31 @@
                     push(gamesRef, {
                         title: title,
                         category: category,
-                        rating: selectedRating,
+                        price: price || "[Free]",
+                        size: size || "N/A",
+                        ratingNum: ratingNum || "5.0",
+                        starRating: selectedRating,
                         imageURL: base64Image,
                         downloadURL: link,
-                        date: new Date().toLocaleDateString()
+                        timestamp: Date.now()
                     }).then(() => {
-                        alert("✅ " + title + " Added Successfully!");
+                        alert("✅ " + title + " Uploaded!");
                         document.getElementById('gameTitle').value = "";
                         document.getElementById('imageFile').value = "";
                         document.getElementById('downloadURL').value = "";
                     });
                 } catch (e) {
-                    alert("Image too big! Please use a smaller image file.");
+                    alert("Image too large!");
                 }
             } else {
-                alert("Please fill all details and select an image!");
+                alert("Fill all main fields!");
             }
         };
 
         function loadGames() {
             onValue(gamesRef, (snapshot) => {
                 const gameListDiv = document.getElementById('gameList');
-                gameListDiv.innerHTML = "<h3>Uploaded Games</h3>";
-                
+                gameListDiv.innerHTML = "<h3>Live Games</h3>";
                 const data = snapshot.val();
                 if (data) {
                     Object.keys(data).forEach(key => {
@@ -156,25 +169,16 @@
                         const item = document.createElement('div');
                         item.className = 'game-item';
                         item.innerHTML = `
-                            <div>
-                                <strong>${game.title}</strong> <br>
-                                <small style="color:#888">${game.category} | ⭐${game.rating}</small>
-                            </div>
-                            <button class="delete-btn" data-id="${key}">Delete</button>
+                            <div><strong>${game.title}</strong><br><small>${game.size} | ${game.category}</small></div>
+                            <button class="delete-btn" data-id="${key}">Remove</button>
                         `;
                         gameListDiv.appendChild(item);
                     });
-
                     document.querySelectorAll('.delete-btn').forEach(btn => {
                         btn.onclick = (e) => {
-                            const id = e.target.getAttribute('data-id');
-                            if(confirm("Are you sure you want to delete this game?")) {
-                                remove(ref(db, 'games/' + id));
-                            }
+                            if(confirm("Delete?")) remove(ref(db, 'games/' + e.target.getAttribute('data-id')));
                         };
                     });
-                } else {
-                    gameListDiv.innerHTML = "<p>No games found in database.</p>";
                 }
             });
         }
