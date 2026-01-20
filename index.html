@@ -114,10 +114,9 @@
         const gamesRef = ref(db, 'games');
 
         let selectedRating = 5;
-        let editId = null; // Edit කරන Game එකේ ID එක තබා ගැනීමට
-        let currentBase64Image = ""; // දැනට තියෙන Image එක තබා ගැනීමට
+        let editId = null; 
+        let currentBase64Image = ""; 
 
-        // Rating Star Logic
         const stars = document.querySelectorAll('.rating-option');
         stars.forEach(star => {
             star.onclick = (e) => {
@@ -155,7 +154,6 @@
             const fileInput = document.getElementById('imageFile');
             const link = document.getElementById('downloadURL').value;
 
-            // Upload හෝ Edit සඳහා Image එකක් තිබිය යුතුයි (Edit වලදී අලුත් එකක් නොදුන්නොත් පරණ එකම ගනී)
             let imageToUpload = currentBase64Image;
             if(fileInput.files[0]) {
                 try {
@@ -184,13 +182,11 @@
             };
 
             if(editId) {
-                // UPDATE කරන්න
                 update(ref(db, 'games/' + editId), gameData).then(() => {
                     alert("✅ Updated Successfully!");
                     resetForm();
                 });
             } else {
-                // අලුතින් PUSH කරන්න
                 push(gamesRef, gameData).then(() => {
                     alert("✅ Uploaded Successfully!");
                     resetForm();
@@ -236,7 +232,6 @@
                         gameListDiv.appendChild(item);
                     });
 
-                    // Edit Button Event
                     document.querySelectorAll('.edit-btn').forEach(btn => {
                         btn.onclick = (e) => {
                             const id = e.target.getAttribute('data-id');
@@ -260,7 +255,6 @@
                         };
                     });
 
-                    // Delete Button Event
                     document.querySelectorAll('.delete-btn').forEach(btn => {
                         btn.onclick = (e) => {
                             if(confirm("Are you sure you want to delete this game?")) {
@@ -275,7 +269,7 @@
 
     <script>
         async function askGemini(targetPage) {
-            const apiKey = "AIzaSyBMNxymnVrgMW9HMqxX3dJn2KWsiAIsMgo"; // මෙතනට ඔබේ API Key එක ඇතුළත් කරන්න
+            const apiKey = "AIzaSyBMNxymnVrgMW9HMqxX3dJn2KWsiAIsMgo"; 
             const prompt = document.getElementById('aiCommand').value;
             const status = document.getElementById('aiStatus');
 
@@ -287,18 +281,26 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: `You are an expert web developer. User wants to change ${targetPage} page. Instruction: ${prompt}. Return only the CSS or JS code. No explanation.` }] }]
+                        contents: [{ parts: [{ text: `Generate ONLY a <style> or <script> tag for ${targetPage}.html page to: ${prompt}. Return code only, no explanation.` }] }]
                     })
                 });
 
                 const data = await response.json();
                 const aiResult = data.candidates[0].content.parts[0].text;
-                
-                status.innerText = "AI වෙනස්කම සාර්ථකයි! කේතය Console එකේ ඇත.";
-                console.log("AI Code for " + targetPage + ":", aiResult);
-                
-                // දැනට HTML පමණක් ඇති නිසා, වෙනස්කම් Preview එකක් ලෙස පෙන්වනු ලැබේ
-                alert("AI මගින් " + targetPage + " සඳහා යෝජනා කළ කේතය: \n\n" + aiResult);
+
+                // සැබෑ ලෙසම සේව් කිරීම සඳහා PHP වෙත යැවීම
+                const saveRes = await fetch('save_code.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page: targetPage, code: aiResult })
+                });
+
+                const saveJson = await saveRes.json();
+                if(saveJson.status === "success") {
+                    status.innerText = "✅ " + targetPage + " සාර්ථකව යාවත්කාලීන විය!";
+                } else {
+                    status.innerText = "❌ වැරදීමක්: " + saveJson.message;
+                }
                 
             } catch (e) {
                 status.innerText = "දෝෂයකි: " + e;
