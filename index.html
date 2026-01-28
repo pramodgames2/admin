@@ -11,12 +11,11 @@
         .enter-btn { background: #fff; color: #000; border: none; padding: 12px; font-weight: bold; cursor: pointer; border-radius: 8px; width: 100%; margin-top: 10px; transition: 0.3s; }
         .enter-btn:hover { background: #ccc; }
         
-        input, .file-input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; box-sizing: border-box; outline: none; }
-        textarea { height: 80px; resize: none; font-family: sans-serif; }
-
+        input, .file-input, select { width: 100%; padding: 12px; margin: 8px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; box-sizing: border-box; outline: none; }
+        
         #adminPanel { display: none; }
         .upload-btn { background: #28a745; color: white; margin-top: 15px; font-size: 16px; }
-        .upload-btn.edit-mode { background: #007bff; } 
+        .upload-btn.edit-mode { background: #007bff; } /* Edit mode එකේදී නිල් පාට වේ */
 
         label { display: block; text-align: left; font-size: 12px; color: #888; margin-top: 10px; margin-left: 2px; text-transform: uppercase; }
         
@@ -32,6 +31,7 @@
         .edit-btn { background: #ffc107; color: #000; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
         .delete-btn { background: #dc3545; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
 
+        /* AI Section Styles */
         .ai-card { background: #1a1a1a; border: 1px solid #007bff; margin-top: 20px; padding: 20px; border-radius: 10px; }
         .ai-btn-group { display: flex; gap: 10px; margin-top: 10px; }
         .ai-btn { flex: 1; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; }
@@ -66,17 +66,6 @@
             <input type="number" step="0.1" id="ratingNum" placeholder="Rating (e.g: 9.3)">
         </div>
 
-        <label>Detailed Information</label>
-        <textarea id="gameDesc" placeholder="Game Description (About the game)"></textarea>
-        <textarea id="gameReq" placeholder="System Requirements (RAM, VGA etc.)"></textarea>
-
-        <label>Screenshots URLs</label>
-        <input type="text" id="ss1" placeholder="Screenshot URL 1">
-        <div class="row">
-            <input type="text" id="ss2" placeholder="Screenshot URL 2">
-            <input type="text" id="ss3" placeholder="Screenshot URL 3">
-        </div>
-
         <label>Star Rating</label>
         <div class="rating-container" id="ratingBar">
             <span class="rating-option" data-value="1">★</span>
@@ -86,7 +75,7 @@
             <span class="rating-option active" data-value="5">★</span>
         </div>
 
-        <label>Game Image</label>
+        <label>Game Image (Leave empty if not changing when editing)</label>
         <input type="file" id="imageFile" class="file-input" accept="image/*">
         
         <input type="text" id="downloadURL" placeholder="Download Link">
@@ -162,11 +151,6 @@
             const price = document.getElementById('gamePrice').value;
             const size = document.getElementById('gameSize').value;
             const ratingNum = document.getElementById('ratingNum').value;
-            const description = document.getElementById('gameDesc').value;
-            const requirements = document.getElementById('gameReq').value;
-            const ss1 = document.getElementById('ss1').value;
-            const ss2 = document.getElementById('ss2').value;
-            const ss3 = document.getElementById('ss3').value;
             const fileInput = document.getElementById('imageFile');
             const link = document.getElementById('downloadURL').value;
 
@@ -193,11 +177,6 @@
                 ratingNum: ratingNum || "5.0",
                 starRating: selectedRating,
                 imageURL: imageToUpload,
-                description: description || "",
-                requirements: requirements || "",
-                ss1: ss1 || "",
-                ss2: ss2 || "",
-                ss3: ss3 || "",
                 downloadURL: link || "#",
                 timestamp: Date.now()
             };
@@ -224,11 +203,6 @@
             document.getElementById('gamePrice').value = "";
             document.getElementById('gameSize').value = "";
             document.getElementById('ratingNum').value = "";
-            document.getElementById('gameDesc').value = "";
-            document.getElementById('gameReq').value = "";
-            document.getElementById('ss1').value = "";
-            document.getElementById('ss2').value = "";
-            document.getElementById('ss3').value = "";
             document.getElementById('uploadBtn').innerText = "UPLOAD TO STORE";
             document.getElementById('uploadBtn').classList.remove('edit-mode');
             document.getElementById('panelTitle').innerText = "ADMIN PANEL";
@@ -271,11 +245,6 @@
                             document.getElementById('gameSize').value = game.size;
                             document.getElementById('ratingNum').value = game.ratingNum;
                             document.getElementById('downloadURL').value = game.downloadURL;
-                            document.getElementById('gameDesc').value = game.description || "";
-                            document.getElementById('gameReq').value = game.requirements || "";
-                            document.getElementById('ss1').value = game.ss1 || "";
-                            document.getElementById('ss2').value = game.ss2 || "";
-                            document.getElementById('ss3').value = game.ss3 || "";
                             setStars(game.starRating);
 
                             document.getElementById('uploadBtn').innerText = "UPDATE GAME DATA";
@@ -297,6 +266,7 @@
             });
         }
 
+        // --- Gemini AI Function (Firebase Version) ---
         window.askGemini = async function(targetPage) {
             const apiKey = "AIzaSyBMNxymnVrgMW9HMqxX3dJn2KWsiAIsMgo"; 
             const prompt = document.getElementById('aiCommand').value;
@@ -317,6 +287,7 @@
                 const data = await response.json();
                 const aiResult = data.candidates[0].content.parts[0].text;
 
+                // PHP වෙනුවට Firebase එකට සේව් කරනවා (GitHub වල වැඩ කරන්න)
                 set(ref(db, 'ai_control/' + targetPage), {
                     code: aiResult,
                     timestamp: Date.now()
